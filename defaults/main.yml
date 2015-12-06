@@ -1,0 +1,28 @@
+---
+tanguru_debian_pkgs:
+  - openjdk-7-jre
+  - unzip
+  - libmysql-java
+  - mysql-server
+  - python-mysqldb
+  - tomcat7 
+  - libspring-instrument-java
+  - xvfb
+  - mailutils
+  - postfix
+
+locale: 'en_US.UTF-8'
+
+tanaguru_download_link: "http://download.tanaguru.org/Tanaguru/tanaguru-3.1.0.i386.tar.gz"
+# Go this link to find your desired ESR Firefox
+# http://download-origin.cdn.mozilla.net/pub/firefox/releases/24.0esr/linux-x86_64/
+# Default is en-US in our example
+fixfox_esr_link: "http://download-origin.cdn.mozilla.net/pub/firefox/releases/24.0esr/linux-x86_64/en-US/firefox-24.0esr.tar.bz2"
+
+tanaguru_parameters:
+  db_name: 'tgdatabase'
+  db_user: 'tguser'
+  db_password: 'tgPassword'
+  url: 'http://localhost:8080/tanaguru/'
+  admin_email: 'admin@example.com'
+  admin_passwd: 'tanaguru15'
