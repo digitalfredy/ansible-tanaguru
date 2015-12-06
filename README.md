@@ -29,7 +29,7 @@ tanaguru_parameters:
   admin_email: 'admin@example.com'
   admin_passwd: 'tanaguru15'
 ```
- - If you want to read about the prerequisites of Tanaguru on Ubuntu, please follow this [link](http://www.tanaguru.org/en/content/ubuntu-prerequisites-tanaguru-3x)
-  - [Here](http://www.tanaguru.org/en/content/ubuntu-installation-tanaguru-3x) is the official installation procedure on Tanagure website.
+- If you want to read about the prerequisites of Tanaguru on Ubuntu, please follow this [link](http://www.tanaguru.org/en/content/ubuntu-prerequisites-tanaguru-3x)
+- [Here](http://www.tanaguru.org/en/content/ubuntu-installation-tanaguru-3x) is the official installation procedure on Tanagure website.
 
 Hope this role will help you. Thanks!
