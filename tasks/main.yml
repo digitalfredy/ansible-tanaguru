@@ -6,9 +6,6 @@
   with_items:
     - "deb http://archive.canonical.com/ubuntu {{ ansible_distribution_release }} partner"
     - "deb-src http://archive.canonical.com/ubuntu {{ ansible_distribution_release }} partner"
-  tags:
-    - install
-    - install:base
 
 - name: Set Postfix options
   debconf: 
@@ -19,9 +16,6 @@
   with_items:
     - { question: "postfix/mailname", value: " " }
     - { question: "postfix/main_mailer_type", value: "Satellite system" }
-  tags:
-    - install
-    - install:configuration
 
 - name: Update locale Setting
   locale_gen:
@@ -29,15 +23,9 @@
     state: present
   register: set_locale
 
-- name: Set locale file
-  template: 
-    src: locale.j2
-    dest: /etc/default/locale
-  register: locale_file
-
 - name: Reconfigure locale
   command: dpkg-reconfigure locales
-  when: set_locale.changed or locale_file.changed
+  when: set_locale.changed
   
 - name: Install the TanaGuru Prerequisites
   apt: 
@@ -45,9 +33,6 @@
     update_cache: yes 
     state: installed
   with_items: tanguru_debian_pkgs
-  tags:
-    - install
-    - install:base
 
 - name: Modify the my.cnf file for max_allowed_packet option
   lineinfile: 
@@ -56,9 +41,6 @@
     line: 'max_allowed_packet      = 64M'
     state: present
   register: my_cnf
-  tags:
-    - install
-    - install:configuration
 
 - name: Restart MySQL
   service: 
@@ -74,9 +56,6 @@
   with_items:
     - { src: '/usr/share/java/spring3-instrument-tomcat.jar', dest: '/usr/share/tomcat7/lib/spring3-instrument-tomcat.jar' }
     - { src: '/usr/share/java/mysql-connector-java.jar', dest: '/usr/share/tomcat7/lib/mysql-connector-java.jar'}
-  tags:
-    - install
-    - install:configuration
 
 - name: Copy the xvfb template to /etc/init.d
   template:
@@ -86,9 +65,6 @@
     group: root
     mode: 755
   register: xvfb
-  tags:
-    - install
-    - install:configuration
 
 - name: Restart xvfb
   service: 
@@ -106,35 +82,23 @@
   get_url: 
     url: "{{ fixfox_esr_link }}" 
     dest: "/tmp/{{ fixfox_esr_link | basename }}"
-  tags:
-    - install
-    - install:base
 
 - name: Unzip the downloaded Firfox zipped file
   unarchive: 
     src: "/tmp/{{ fixfox_esr_link | basename }}" 
     dest: /opt 
     copy: no
-  tags:
-    - install
-    - install:base
 
 - name: Download the latest TanaGuru tarball
   get_url: 
     url: "{{ tanaguru_download_link }}" 
     dest: "/tmp/{{ tanaguru_download_link | basename }}"
-  tags:
-    - install
-    - install:base
 
 - name: Unzip the downloaded TanaGuru tarball
   unarchive: 
     src: "/tmp/{{ tanaguru_download_link | basename }}" 
     dest: "/tmp/" 
     copy: no
-  tags:
-    - install
-    - install:base
 
 - name: Create MySQL database for TanaGuru
   mysql_db: 
@@ -142,9 +106,6 @@
     state: present 
     encoding: utf8
     collation: utf8_general_ci
-  tags:
-    - install
-    - install:base
 
 - name: Create MySQL user for TanaGuru
   mysql_user: 
@@ -153,17 +114,12 @@
     host: localhost  
     priv: "{{ tanaguru_parameters.db_name }}.*:ALL"
     state: present
-  tags:
-    - install
-    - install:base
 
 - name: Check that tanaguru app is running
   shell: >
     /bin/ps aux | grep -i tanaguru
   register: tanaguru_app
   changed_when: no
-  tags:
-    - install
 
 - name: Install the TanaGuru
   shell: >
@@ -181,9 +137,6 @@
     chdir: "/tmp/{{ tanaguru_download_link | basename | regex_replace('.tar.gz$', '') }}"
   when: "tanaguru_app.stdout.find('/etc/tanaguru/') == -1"
   register: tanaguru_install
-  tags:
-    - install
-    - install:base
 
 - name: Restart tomcat7
   service: 
