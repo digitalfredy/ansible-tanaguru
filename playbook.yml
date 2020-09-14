@@ -1,0 +1,112 @@
+---
+- name: Tanaguru installation
+  hosts: tanaguru
+  become: true
+  vars:
+    tanaguru_url: http://download.tanaguru.org/Tanaguru/tanaguru-6.1.0-fixed.i386.tar.gz
+    firefox_url: http://productdeliveryorigin-default.prod.mozaws.net/pub/firefox/releases/80.0/linux-x86_64/en-US/firefox-80.0.tar.bz2
+    geckodrv_url: https://github.com/mozilla/geckodriver/releases/download/v0.27.0/geckodriver-v0.27.0-linux64.tar.gz
+    w3c_validator_url: https://github.com/validator/validator/releases/download/20.6.30/vnu.jar_20.6.30.zip
+
+  tasks:
+# From here is the improved version for prerequisites
+# https://tanaguru.readthedocs.io/en/develop/prerequisites-cli-doc/
+  - apt:
+      pkg:
+      - openjdk-11-jre
+      - tomcat9
+      - libspring-instrument-java
+      - mariadb-server-10.3
+      - libmariadb-java
+      - xvfb
+      - unzip
+      - postfix
+      - mailutils
+      state: present
+  - alternatives:
+      name: java
+      path: /usr/lib/jvm/java-11-openjdk-amd64/bin/java
+#sudo ln -s /usr/share/java/spring3-instrument-tomcat.jar /usr/share/tomcat8/lib/spring3-instrument-tomcat.jar
+#sudo ln -s /usr/share/java/mysql-connector-java.jar /usr/share/tomcat8/lib/mysql-connector-java.jar
+
+  - pip:
+      name: PyMySQL
+  - service:
+      name: mariadb
+      state: restarted
+      enabled: yes
+  - mysql_variables:
+      login_unix_socket: /run/mysqld/mysqld.sock
+      variable: max_allowed_packet
+      value: '64000000'
+  - copy:
+      src: xvfb-tanaguru-cli
+      dest: /etc/init.d/xvfb-tanaguru-cli
+      owner: root
+      group: root
+      mode: '0744'
+  - sysvinit:
+      name: xvfb-tanaguru-cli
+      enabled: yes
+      state: started
+      runlevels: 2
+# sudo dpkg-reconfigure postfix  # configuration type: satellite # SMTP relay: <none> (this is the trick, don't type anything here)
+  - get_url:
+      url: "{{ firefox_url }}"
+      dest: /tmp/firefox.tar.bz2
+  - unarchive:
+      src: /tmp/firefox.tar.bz2
+      dest: /usr/local/lib
+  - file:
+      src: /usr/local/lib/firefox/firefox
+      dest: /usr/local/bin/firefox
+      state: link
+  - get_url:
+      url: "{{ geckodrv_url }}"
+      dest: /tmp/geckodrv.tgz
+  - unarchive:
+      src: /tmp/geckodrv.tgz
+      dest: /usr/local/bin
+  - get_url:
+      url: "{{ w3c_validator_url }}"
+      dest: /tmp/w3c_validator.zip
+  - file:
+      path: /tmp/w3c_validator
+      state: directory
+  - unarchive:
+      src: /tmp/w3c_validator.zip
+      dest: /tmp/w3c_validator
+  - copy:
+      src: /tmp/w3c_validator/dist/vnu.jar
+#TODO validate if this path works
+      dest: /usr/local/bin/vnu.jar
+
+# From here is the installation
+# https://tanaguru.readthedocs.io/en/develop/install-webapp-doc/
+
+
+  - file:
+      src: /etc/default/tomcat9
+      dest: /etc/default/tomcat
+      state: link
+  - get_url:
+      url: "{{ tanaguru_url }}"
+      dest: /tmp/tanaguru.tgz
+  - unarchive:
+      src: /tmp/tanaguru.tgz
+      dest: /tmp/
+  - mysql_db:
+      name: tanaguru
+      state: present
+      encoding: utf8
+      login_unix_socket: /run/mysqld/mysqld.sock
+  - mysql_user:
+      name: tanaguru
+      password: insecure
+      priv: 'tanaguru.*:ALL'
+      state: present
+      login_unix_socket: /run/mysqld/mysqld.sock
+  - name: debug
+    debug:
+      msg: hello
+# sudo ./install.sh --mysql-tg-host localhost --mysql_tg_user tanaguru --mysql_tg_passwd insecure --mysql_tg_db tanaguru --tanaguru_url http://localhost:8080/tanaguru --tomcat_webapps /var/lib/tomcat9/webapps --tomcat_user tomcat --firefox_esr_path /usr/local/lib/firefox/firefox --display_port :99 --tg_version 7.0.0-SNAPSHOT
